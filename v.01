@@ -1,1 +1,173 @@
-ok
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <numeric>
+#include <cstdlib>
+#include <ctime>
+#include <limits>
+#include <iomanip>
+
+struct Student {
+    std::string vardas;
+    std::string pavarde;
+    std::vector<int> paz;
+    int egz;
+    double galutinis;
+    double vidurkis;
+    double mediana;
+};
+
+double skaiciuotiVidurki(const std::vector<int>& paz) {
+    if (paz.empty()) return 0.0;
+    return std::accumulate(paz.begin(), paz.end(), 0.0) / paz.size();
+}
+
+double skaiciuotiMediana(std::vector<int> paz) {
+    if (paz.empty()) return 0.0;
+    std::sort(paz.begin(), paz.end());
+    size_t dydis = paz.size();
+    if (dydis % 2 == 0) {
+        return (paz[dydis / 2 - 1] + paz[dydis / 2]) / 2.0;}
+    else {
+        return paz[dydis / 2];
+    }
+}
+
+void ivestiStudenta(Student& s) {
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    std::cout << "Iveskite studento varda: ";
+    std::getline(std::cin, s.vardas);
+
+    std::cout << "Iveskite studento pavarde: ";
+    std::getline(std::cin, s.pavarde);
+
+    int pazymys;
+    std::cout << "Iveskite namu darbu pazymius (iveskite -1, kad baigtumete): ";
+    while (true) {
+        std::cin >> pazymys;
+        if (std::cin.fail()) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Klaida! Iveskite skaiciu tarp 1 ir 10 arba -1: ";
+            continue;
+        }
+        if (pazymys == -1) break;
+        if (pazymys >= 1 && pazymys <= 10) {
+            s.paz.push_back(pazymys);
+        } else {
+            std::cout << "Klaida! Iveskite skaiciu tarp 1 ir 10: ";
+        }
+    }
+
+    std::cout << "Iveskite egzamino rezultata: ";
+    while (true) {
+        std::cin >> s.egz;
+        if (std::cin.fail() || s.egz < 1 || s.egz > 10) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Klaida! Iveskite skaiciu tarp 1 ir 10: ";
+        } else {
+            break;
+        }
+    }
+}
+
+void generuotiPazymius(Student& s) {
+    s.paz.clear();
+    std::srand(std::time(nullptr));
+    int nd_kiekis = 1 + std::rand() % 10;
+    std::cout << "Sugeneruoti pazymiai: ";
+    for (int i = 0; i < nd_kiekis; i++) {
+        s.paz.push_back(1 + std::rand() % 10);
+        std::cout << s.paz[i] << " ";
+    }
+    std::cout << std::endl;
+    s.egz = 1 + std::rand() % 10;
+    std::cout << "Egzamino rezultatas: " << s.egz << std::endl;
+}
+
+void generuotiVardusPavardesPazymius(Student& s) {
+    s.vardas = "Vardas" ;
+    s.pavarde = "Pavarde";
+    generuotiPazymius(s);
+}
+
+void spausdintiRezultatus(Student& s, int pasirinkimas) {
+    if (pasirinkimas == 1) {
+        s.vidurkis = skaiciuotiVidurki(s.paz);
+        s.galutinis = 0.4 * s.vidurkis + 0.6 * s.egz;
+    } else if (pasirinkimas == 2) {
+        s.mediana = skaiciuotiMediana(s.paz);
+        s.galutinis = 0.4 * s.mediana + 0.6 * s.egz;
+    } else {
+        std::cout << "Klaida! Pasirinkote neteisinga metoda" << std::endl;
+        s.galutinis = 0.0;
+    }
+}
+
+void spausdintiStudentuRezultatus(const std::vector<Student>& studentai) {
+    std::cout << "\nStudentu rezultatai:\n";
+    std::cout << std::left << std::setw(15) << "Pavarde"
+              << std::setw(15) << "Vardas"
+              << std::setw(15) << "Vidurkis"
+              << std::setw(15) << "Mediana"
+              << std::setw(15) << "Galutinis" << std::endl;
+    std::cout << "---------------------------------------------------------------------"<< std::endl;
+
+    for (const auto& s : studentai) {
+        std::cout << std::left << std::setw(15) << s.pavarde
+                  << std::setw(15) << s.vardas
+                  << std::setw(15) << std::fixed << std::setprecision(2) << s.vidurkis
+                  << std::setw(15) << std::fixed << std::setprecision(2) << s.mediana
+                  << std::setw(15) << std::fixed << std::setprecision(2) << s.galutinis << std::endl;
+    }
+}
+
+int main() {
+    int studentuKiekis;
+    std::cout << "Iveskite studentu kieki: ";
+    while (!(std::cin >> studentuKiekis) || studentuKiekis <= 0) {
+        std::cout << "Klaida! Studentu kiekis turi buti teigiamas skaicius. Iveskite dar karta: ";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+
+    std::vector<Student> studentai;
+    bool baigtasDarbas = false;
+
+    while (!baigtasDarbas) {
+        for (int i = 0; i < studentuKiekis; ++i) {
+            Student s;
+            int pasirinkimas;
+
+            std::cout <<"Pasirinkite: "
+                      << "\n1 - Ivesti rankiniu budu\n"
+                      << "2 - Generuoti tik pazymius\n"
+                      << "3 - Generuoti viska\n"
+                      << "4 - Baigti darba ir rodyti rezultatus\n";
+            std::cout << "Jusu pasirinkimas: ";
+            std::cin >> pasirinkimas;
+
+            if (pasirinkimas == 1) ivestiStudenta(s);
+            else if (pasirinkimas == 2) generuotiPazymius(s);
+            else if (pasirinkimas == 3) generuotiVardusPavardesPazymius(s);
+            else if (pasirinkimas == 4) {
+                baigtasDarbas = true;
+                break;
+            } else continue;
+
+            std::cout << "Pasirinkite metoda:\n1 - Vidurkis\n2 - Mediana\nJusu pasirinkimas: ";
+            int metodas;
+            std::cin >> metodas;
+            spausdintiRezultatus(s, metodas);
+
+            studentai.push_back(s);
+        }
+    }
+
+    spausdintiStudentuRezultatus(studentai);
+    return 0;
+}
+
+
