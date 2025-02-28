@@ -1,0 +1,135 @@
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <algorithm>
+#include <numeric>
+#include <iomanip>
+#include <sstream>
+
+struct Student {
+    std::string vardas;
+    std::string pavarde;
+    std::vector<int> paz;
+    int egz;
+    double galutinisVid;
+    double galutinisMed;
+};
+
+double skaiciuotiVidurki(const std::vector<int>& paz) {
+    if (paz.empty()) return 0.0;
+    return std::accumulate(paz.begin(), paz.end(), 0.0) / paz.size();
+}
+
+double skaiciuotiMediana(std::vector<int> paz) {
+    if (paz.empty()) return 0.0;
+    std::sort(paz.begin(), paz.end());
+    size_t dydis = paz.size();
+    if (dydis % 2 == 0) {
+        return (paz[dydis / 2 - 1] + paz[dydis / 2]) / 2.0;
+    } else {
+        return paz[dydis / 2];
+    }
+}
+
+std::vector<Student> nuskaitytiIsFailo(const std::string& failoVardas) {
+    std::ifstream failas(failoVardas);
+    std::vector<Student> studentai;
+    if (!failas) {
+        std::cerr << "Klaida! Nepavyko atidaryti failo: " << failoVardas << std::endl;
+        return studentai;
+    }
+
+    std::string eilute;
+    std::getline(failas, eilute);  // Praleidžiame antraštės eilutę
+
+    while (std::getline(failas, eilute)) {
+        std::istringstream iss(eilute);
+        Student s;
+        iss >> s.vardas >> s.pavarde;
+
+        int pazymys;
+        while (iss >> pazymys) {
+            s.paz.push_back(pazymys);
+        }
+        s.egz = s.paz.back();  // Paskutinis skaičius yra egzamino rezultatas
+        s.paz.pop_back();  // Ištriname egzaminą iš namų darbų pažymių sąrašo
+
+        s.galutinisVid = 0.4 * skaiciuotiVidurki(s.paz) + 0.6 * s.egz;
+        s.galutinisMed = 0.4 * skaiciuotiMediana(s.paz) + 0.6 * s.egz;
+
+        studentai.push_back(s);
+    }
+
+    return studentai;
+}
+
+void irasytiIFaila(const std::vector<Student>& studentai, const std::string& failoVardas) {
+    std::ofstream failas(failoVardas);
+    if (!failas) {
+        std::cerr << "Klaida! Nepavyko sukurti failo: " << failoVardas << std::endl;
+        return;
+    }
+
+    failas << std::left << std::setw(15) << "Vardas"
+           << std::setw(15) << "Pavarde"
+           << std::setw(20) << "Galutinis (Vid.)"
+           << std::setw(20) << "Galutinis (Med.)" << std::endl;
+    failas << std::string(70, '-') << std::endl;
+
+    for (const auto& s : studentai) {
+        failas << std::left << std::setw(15) << s.vardas
+               << std::setw(15) << s.pavarde
+               << std::setw(20) << std::fixed << std::setprecision(2) << s.galutinisVid
+               << std::setw(20) << std::fixed << std::setprecision(2) << s.galutinisMed
+               << std::endl;
+    }
+
+    std::cout << "Rezultatai irasyti i faila 'rezultatai.txt'" << std::endl;
+}
+
+void rikiuotiStudentus(std::vector<Student>& studentai, int pasirinkimas) {
+    if (pasirinkimas == 1) {
+        std::sort(studentai.begin(), studentai.end(), [](const Student& a, const Student& b) {
+            return a.vardas < b.vardas;
+        });
+    } else if (pasirinkimas == 2) {
+        std::sort(studentai.begin(), studentai.end(), [](const Student& a, const Student& b) {
+            return a.pavarde < b.pavarde;
+        });
+    } else if (pasirinkimas == 3) {
+        std::sort(studentai.begin(), studentai.end(), [](const Student& a, const Student& b) {
+            return a.galutinisVid > b.galutinisVid;
+        });
+    } else if (pasirinkimas == 4) {
+        std::sort(studentai.begin(), studentai.end(), [](const Student& a, const Student& b) {
+            return a.galutinisMed > b.galutinisMed;
+        });
+    }
+}
+
+int main() {
+    std::string failoVardas = "studentai10000.txt";
+    std::vector<Student> studentai = nuskaitytiIsFailo(failoVardas);
+
+    if (studentai.empty()) {
+        std::cerr << "Klaida! Nepavyko nuskaityti studentų duomenų." << std::endl;
+        return 1;
+    }
+
+    int pasirinkimas;
+    std::cout << "Pasirinkite rikiavimo buda:\n"
+              << "1 - Pagal varda\n"
+              << "2 - Pagal pavarde\n"
+              << "3 - Pagal galutini (vidurkis)\n"
+              << "4 - Pagal galutini (mediana)\n"
+              << "Jusu pasirinkimas: ";
+    std::cin >> pasirinkimas;
+
+    rikiuotiStudentus(studentai, pasirinkimas);
+
+    irasytiIFaila(studentai, "rezultatai.txt");
+
+    return 0;
+}
+
